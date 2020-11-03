@@ -1,7 +1,8 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import brentq
-from scipy.special import gamma
+from scipy.special import gamma as Gamma
+from scipy.special import hyp1f1
 from scipy.stats import gamma as gamma_distro
 from scipy.stats import genpareto, pareto, gengamma, rv_histogram, lomax, beta
 import pylab as plt
@@ -209,6 +210,7 @@ class SIRComparison:
             xS = x[:,0]
             xR = x[:,-1]
             xI = x[:-2]
+
 
         if mode == 'powerSIR':
             sol = solve_ivp(self.powerSIR, t_span = tspan, y0=x0, **kwargs) 
@@ -430,9 +432,16 @@ class SymmetricBetaSIR(SIRComparison):
 
         return beta.pdf(epsilon, ab, ab, scale = 2.)
 
+    def get_epbar(self, t):
+        print("Warning: The mean susceptibility implementation for Beta distributions is unverified")
+        a = self.ab
+        b = self.ab
+        phi = self.beta*self.xR
+        epbar = self.epmax*(a*hyp1f1(1+a, 1+a+b, -phi)/(Gamma(1+a+b)))/(hyp1f1(a, a+b, -phi)/Gamma(a+b))
+        return epbar
+
     def get_param_info(self):
         return 'SymmetricBeta', 'a & b', np.round(self.ab, 3)
-
 
 class TwoPointSIR(SIRComparison):
     def __init__(self, *args, **kwargs):
